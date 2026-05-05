@@ -1,121 +1,67 @@
 export default function Footer() {
   return (
-    <footer
-      className="relative mt-20 pt-16 pb-8 overflow-hidden"
-      style={{ background: "#0F172A" }}
-    >
-      {/* decorative top border */}
-      <div
-        className="absolute top-0 left-0 right-0 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg,transparent,rgba(14,165,233,0.5),rgba(107,127,212,0.5),transparent)",
-        }}
-      />
-
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+    <footer style={{ background: "#0F172A", paddingTop: 64, paddingBottom: 32, marginTop: 0 }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 28px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 48, marginBottom: 48 }}>
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-lg"
-                style={{
-                  background: "linear-gradient(135deg,#0EA5E9,#6B7FD4)",
-                }}
-              >
-                U
-              </div>
-              <span className="font-display text-xl font-bold text-white">
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 10,
+                background: "linear-gradient(135deg, #0EA5E9, #6B7FD4)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#fff", fontWeight: 800, fontSize: 18,
+              }}>U</div>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: "#fff" }}>
                 UzTravel
               </span>
             </div>
-            <p
-              className="text-sm font-body leading-relaxed"
-              style={{ color: "rgba(255,255,255,0.45)" }}
-            >
-              O'zbekistonning eng go'zal tog'lari, ko'llari va tabiat
-              qo'ynidagi joylarni kashf eting. Sayohatingizni biz bilan
-              rejalashtiring.
+            <p style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "rgba(255,255,255,0.42)",
+              lineHeight: 1.8, maxWidth: 280,
+            }}>
+              O'zbekistonning eng go'zal tog'lari, ko'llari va tabiat qo'ynidagi joylarni kashf eting.
             </p>
           </div>
 
           {/* Links */}
           <div>
-            <h4
-              className="text-sm font-body font-semibold mb-4 uppercase tracking-widest"
-              style={{ color: "rgba(255,255,255,0.3)" }}
-            >
+            <h4 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.28)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16 }}>
               Kategoriyalar
             </h4>
-            <ul className="space-y-3">
-              {[
-                "⛰️ Tog'li Joylar",
-                "🏞️ Ko'l va Havzalar",
-                "🧺 Piknik Joylari",
-                "🎣 Baliq Ovlash",
-                "🥾 Trekking",
-                "🏜️ Cho'l va Sahrolar",
-              ].map((item) => (
-                <li key={item}>
-                  <span
-                    className="text-sm font-body cursor-pointer transition-colors duration-200 hover:text-sky-400"
-                    style={{ color: "rgba(255,255,255,0.5)" }}
-                  >
-                    {item}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {["⛰️ Tog'li Joylar", "🏞️ Ko'l va Havzalar", "🧺 Piknik Joylari", "🎣 Baliq Ovlash", "🥾 Trekking", "🏜️ Cho'l"].map(item => (
+              <div key={item} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "rgba(255,255,255,0.45)", marginBottom: 10, cursor: "pointer" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#38BDF8"}
+                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.45)"}
+              >{item}</div>
+            ))}
           </div>
 
           {/* Contact */}
           <div>
-            <h4
-              className="text-sm font-body font-semibold mb-4 uppercase tracking-widest"
-              style={{ color: "rgba(255,255,255,0.3)" }}
-            >
+            <h4 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.28)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16 }}>
               Aloqa
             </h4>
-            <ul className="space-y-3">
-              {[
-                { icon: "📍", text: "Toshkent, O'zbekiston" },
-                { icon: "📞", text: "+998 90 123 45 67" },
-                { icon: "✉️", text: "info@uztravel.uz" },
-              ].map((c) => (
-                <li
-                  key={c.text}
-                  className="flex items-center gap-2 text-sm font-body"
-                  style={{ color: "rgba(255,255,255,0.5)" }}
-                >
-                  <span>{c.icon}</span>
-                  <span>{c.text}</span>
-                </li>
-              ))}
-            </ul>
+            {[
+              { icon: "📍", text: "Toshkent, O'zbekiston" },
+              { icon: "📞", text: "+998 90 123 45 67" },
+              { icon: "✉️", text: "info@uztravel.uz" },
+            ].map(c => (
+              <div key={c.text} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "rgba(255,255,255,0.45)", marginBottom: 10 }}>
+                <span>{c.icon}</span><span>{c.text}</span>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Bottom */}
-        <div
-          className="pt-6 flex flex-col md:flex-row items-center justify-between gap-4"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
-        >
-          <p
-            className="text-xs font-body"
-            style={{ color: "rgba(255,255,255,0.25)" }}
-          >
+        <div style={{ paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.24)" }}>
             © 2025 UzTravel. Barcha huquqlar himoyalangan.
           </p>
-          <div className="flex items-center gap-2">
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ background: "#4ADE80" }}
-            />
-            <span
-              className="text-xs font-body"
-              style={{ color: "rgba(255,255,255,0.3)" }}
-            >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ADE80" }} />
+            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.28)" }}>
               Xizmat ishlayapti
             </span>
           </div>

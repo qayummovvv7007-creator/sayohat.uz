@@ -9,113 +9,104 @@ export default function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    const stored = localStorage.getItem("uztravel_user");
-    if (stored) setUser(JSON.parse(stored));
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll);
+    try {
+      const s = localStorage.getItem("uztravel_user");
+      if (s) setUser(JSON.parse(s));
+    } catch {}
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("uztravel_user");
-    router.push("/");
-  };
+  const logout = () => { localStorage.removeItem("uztravel_user"); router.push("/"); setUser(null); };
+
+  const navBg = scrolled
+    ? "rgba(255,255,255,0.82)"
+    : "rgba(255,255,255,0.12)";
+  const navBorder = scrolled
+    ? "1px solid rgba(255,255,255,0.6)"
+    : "1px solid rgba(255,255,255,0.22)";
+  const textColor = scrolled ? "#1E293B" : "#fff";
+  const subColor = scrolled ? "#64748B" : "rgba(255,255,255,0.6)";
 
   return (
-    <nav
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
-      style={{
-        background: scrolled
-          ? "rgba(255,255,255,0.72)"
-          : "rgba(255,255,255,0.12)",
-        backdropFilter: "blur(24px) saturate(1.8)",
-        WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-        borderBottom: scrolled
-          ? "1px solid rgba(255,255,255,0.5)"
-          : "1px solid rgba(255,255,255,0.22)",
-        boxShadow: scrolled ? "0 4px 24px rgba(0,0,0,0.08)" : "none",
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <nav style={{
+      position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+      background: navBg,
+      backdropFilter: "blur(24px) saturate(1.8)",
+      WebkitBackdropFilter: "blur(24px) saturate(1.8)",
+      borderBottom: navBorder,
+      boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.08)" : "none",
+      transition: "all 0.4s ease",
+    }}>
+      <div style={{
+        maxWidth: 1280, margin: "0 auto", padding: "0 28px",
+        height: 64, display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg"
-            style={{ background: "linear-gradient(135deg,#0EA5E9,#6B7FD4)" }}
-          >
-            U
-          </div>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: "linear-gradient(135deg, #0EA5E9, #6B7FD4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#fff", fontWeight: 800, fontSize: 16,
+            boxShadow: "0 4px 12px rgba(14,165,233,0.4)",
+          }}>U</div>
           <div>
-            <span
-              className="font-display font-bold text-lg leading-none"
-              style={{ color: scrolled ? "#0F172A" : "#fff" }}
-            >
+            <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 18, color: textColor, lineHeight: 1.1, transition: "color 0.3s" }}>
               UzTravel
-            </span>
-            <span
-              className="block text-xs font-body"
-              style={{ color: scrolled ? "#64748B" : "rgba(255,255,255,0.6)" }}
-            >
+            </div>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: subColor, transition: "color 0.3s" }}>
               O'zbekiston Sayohati
-            </span>
+            </div>
           </div>
         </Link>
 
-        {/* Links */}
-        <div className="hidden md:flex items-center gap-8">
-          {[
-            { href: "/explore", label: "Kashf etish" },
-            { href: "/map", label: "Xarita" },
-          ].map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="text-sm font-body font-medium transition-colors duration-200"
-              style={{ color: scrolled ? "#334155" : "rgba(255,255,255,0.82)" }}
-            >
-              {l.label}
-            </Link>
+        {/* Nav links */}
+        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+          {[{ href: "/explore", label: "Kashf etish" }, { href: "/map", label: "Xarita" }].map(l => (
+            <Link key={l.href} href={l.href} style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500,
+              color: textColor, textDecoration: "none", transition: "opacity 0.2s",
+              opacity: 0.82,
+            }}
+              onMouseEnter={e => e.currentTarget.style.opacity = 1}
+              onMouseLeave={e => e.currentTarget.style.opacity = 0.82}
+            >{l.label}</Link>
           ))}
-        </div>
 
-        {/* Auth */}
-        <div className="flex items-center gap-3">
           {user ? (
-            <div className="flex items-center gap-3">
-              <div
-                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-body"
-                style={{
-                  background: "rgba(14,165,233,0.12)",
-                  color: scrolled ? "#0EA5E9" : "#fff",
-                  border: "1px solid rgba(14,165,233,0.3)",
-                }}
-              >
-                <span>👤</span>
-                <span>{user.phone || user.email?.split("@")[0]}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                padding: "6px 14px", borderRadius: 999,
+                background: "rgba(14,165,233,0.12)",
+                border: "1px solid rgba(14,165,233,0.28)",
+                color: scrolled ? "#0EA5E9" : "#fff",
+                fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 500,
+                display: "flex", alignItems: "center", gap: 6,
+              }}>
+                👤 {user.phone ? `+998${user.phone}` : user.email?.split("@")[0]}
               </div>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 rounded-full text-xs font-body font-medium transition-all duration-200"
-                style={{
-                  background: "rgba(239,68,68,0.12)",
-                  color: scrolled ? "#EF4444" : "rgba(255,200,200,0.9)",
-                  border: "1px solid rgba(239,68,68,0.25)",
-                }}
-              >
-                Chiqish
-              </button>
+              <button onClick={logout} style={{
+                padding: "6px 14px", borderRadius: 999, cursor: "pointer",
+                background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
+                color: scrolled ? "#EF4444" : "#FCA5A5",
+                fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 500,
+                transition: "background 0.2s",
+              }}>Chiqish</button>
             </div>
           ) : (
-            <Link
-              href="/auth"
-              className="px-5 py-2 rounded-full text-sm font-body font-semibold text-white transition-all duration-300 shadow-lg"
-              style={{
-                background: "linear-gradient(135deg,#0EA5E9,#6B7FD4)",
-                boxShadow: "0 4px 14px rgba(14,165,233,0.4)",
-              }}
-            >
-              Kirish
-            </Link>
+            <Link href="/auth" style={{
+              padding: "9px 22px", borderRadius: 12,
+              background: "linear-gradient(135deg, #0EA5E9, #6B7FD4)",
+              color: "#fff", textDecoration: "none",
+              fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
+              boxShadow: "0 4px 14px rgba(14,165,233,0.4)",
+              transition: "transform 0.2s, box-shadow 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(14,165,233,0.5)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 14px rgba(14,165,233,0.4)"; }}
+            >Kirish</Link>
           )}
         </div>
       </div>

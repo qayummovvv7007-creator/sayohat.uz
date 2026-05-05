@@ -1,41 +1,40 @@
-@import "tailwindcss";
-
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   --glass: rgba(255,255,255,0.18);
-  --glass-strong: rgba(255,255,255,0.32);
   --glass-border: rgba(255,255,255,0.42);
   --glass-shadow: 0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
-  --glass-shadow-dark: 0 8px 32px rgba(0,0,0,0.28);
   --sky: #0EA5E9;
-  --sage: #4D7C5E;
-  --gold: #D4A853;
   --dark: #0F172A;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { font-family: 'DM Sans', sans-serif; background: #fff; color: var(--dark); overflow-x: hidden; }
+body {
+  font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #fff;
+  color: var(--dark);
+  overflow-x: hidden;
+}
 
-/* ── GLASS UTILITY ── */
+.font-display { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; }
+.font-body { font-family: 'DM Sans', 'Inter', -apple-system, sans-serif; }
+
+/* GLASS */
 .glass {
-  background: var(--glass);
+  background: rgba(255,255,255,0.18);
   backdrop-filter: blur(24px) saturate(1.8);
   -webkit-backdrop-filter: blur(24px) saturate(1.8);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  border: 1px solid rgba(255,255,255,0.42);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
 }
 .glass-dark {
   background: rgba(15,23,42,0.35);
   backdrop-filter: blur(24px) saturate(1.6);
   -webkit-backdrop-filter: blur(24px) saturate(1.6);
   border: 1px solid rgba(255,255,255,0.15);
-  box-shadow: var(--glass-shadow-dark);
 }
 .glass-card {
   background: rgba(255,255,255,0.22);
@@ -51,47 +50,35 @@ body { font-family: 'DM Sans', sans-serif; background: #fff; color: var(--dark);
   box-shadow: 0 20px 48px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.9);
 }
 
-/* ── ANIMATIONS ── */
+/* ANIMATIONS */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(32px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
 @keyframes float {
   0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-14px); }
+  50%      { transform: translateY(-12px); }
 }
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
-@keyframes slideRight {
-  from { transform: translateX(-100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 0.9; }
-  80% { transform: scale(2.2); opacity: 0; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes spinSlow { to { transform: rotate(360deg); } }
 
-.anim-fade-up { animation: fadeUp 0.75s cubic-bezier(0.23,1,0.32,1) both; }
-.anim-fade-in { animation: fadeIn 0.6s ease both; }
 .anim-float { animation: float 6s ease-in-out infinite; }
-.anim-slide-right { animation: slideRight 0.65s cubic-bezier(0.23,1,0.32,1) both; }
 
-.delay-100 { animation-delay: 0.1s; }
-.delay-200 { animation-delay: 0.2s; }
-.delay-300 { animation-delay: 0.3s; }
-.delay-400 { animation-delay: 0.4s; }
-.delay-500 { animation-delay: 0.5s; }
-.delay-600 { animation-delay: 0.6s; }
-.delay-700 { animation-delay: 0.7s; }
+/* SPIN for loading */
+.spin { animation: spinSlow 0.8s linear infinite; }
 
-/* ── LEAFLET OVERRIDES ── */
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(14,165,233,0.3); border-radius: 99px; }
+
+/* LEAFLET */
 .leaflet-control-attribution { display: none !important; }
-.leaflet-container { font-family: 'DM Sans', sans-serif !important; }
+.leaflet-container { font-family: inherit !important; }
 .leaflet-popup-content-wrapper {
   background: rgba(255,255,255,0.88) !important;
   backdrop-filter: blur(20px) !important;
@@ -100,37 +87,3 @@ body { font-family: 'DM Sans', sans-serif; background: #fff; color: var(--dark);
   box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important;
 }
 .leaflet-popup-tip { background: rgba(255,255,255,0.88) !important; }
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(14,165,233,0.3); border-radius: 99px; }
-
-/* ── SHIMMER BUTTON ── */
-.btn-shimmer {
-  background: linear-gradient(90deg, var(--sky) 0%, #38BDF8 40%, #7DD3FC 50%, #38BDF8 60%, var(--sky) 100%);
-  background-size: 200% auto;
-  animation: shimmer 2.5s linear infinite;
-}
-
-/* ── HERO NOISE OVERLAY ── */
-.noise::before {
-  content: '';
-  position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 1;
-}
-
-/* ── MAP MARKER ── */
-.map-marker { cursor: pointer; }
-.marker-pin {
-  width: 36px; height: 36px; border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-}
-.marker-inner {
-  width: 18px; height: 18px; background: white; border-radius: 50%;
-  transform: rotate(45deg); display: flex; align-items: center; justify-content: center;
-  font-size: 10px;
-}
