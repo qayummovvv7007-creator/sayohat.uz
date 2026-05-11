@@ -1,510 +1,176 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import Dashboard from "./Dashboard.jsx";
 
-/* ── LIQUID RIPPLE HOOK ─────────────────────── */
 function useRipple() {
   const [ripples, setRipples] = useState([]);
   const fire = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const id = Date.now();
+    const id = Date.now() + Math.random();
     setRipples(r => [...r, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
-    setTimeout(() => setRipples(r => r.filter(rp => rp.id !== id)), 700);
+    setTimeout(() => setRipples(r => r.filter(rp => rp.id !== id)), 900);
   };
   return { ripples, fire };
 }
 
-/* ── 3D LOGO ICON ───────────────────────────── */
-function Logo3D() {
-  const [hov, setHov] = useState(false);
-  const x = useSpring(0, { stiffness: 300, damping: 20 });
-  const y = useSpring(0, { stiffness: 300, damping: 20 });
-
+function Tilt3D({ children, depth = 10, style = {} }) {
+  const ref = useRef(null);
+  const xRaw = useMotionValue(0);
+  const yRaw = useMotionValue(0);
+  const rotX = useSpring(useTransform(yRaw, [-0.5, 0.5], [depth, -depth]), { stiffness: 280, damping: 24 });
+  const rotY = useSpring(useTransform(xRaw, [-0.5, 0.5], [-depth, depth]), { stiffness: 280, damping: 24 });
   const onMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    x.set(((e.clientX - rect.left) / rect.width - 0.5) * 22);
-    y.set(((e.clientY - rect.top) / rect.height - 0.5) * -22);
+    const r = ref.current.getBoundingClientRect();
+    xRaw.set((e.clientX - r.left) / r.width - 0.5);
+    yRaw.set((e.clientY - r.top) / r.height - 0.5);
   };
-  const onLeave = () => { x.set(0); y.set(0); setHov(false); };
-
   return (
-    <Link href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
-      <motion.div
-        onMouseMove={onMove}
-        onMouseEnter={() => setHov(true)}
-        onMouseLeave={onLeave}
-        style={{
-          width: 40, height: 40, borderRadius: 12,
-          background: "linear-gradient(145deg, #38BDF8, #6366F1, #A78BFA)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", position: "relative", overflow: "hidden",
-          rotateX: y, rotateY: x,
-          transformStyle: "preserve-3d",
-          boxShadow: hov
-            ? "0 12px 28px rgba(99,102,241,0.55), 0 4px 10px rgba(14,165,233,0.4), inset 0 1px 0 rgba(255,255,255,0.4)"
-            : "0 4px 14px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.3)",
-          transition: "box-shadow 0.3s",
-        }}
-      >
-        {/* Inner shine */}
-        <div style={{
-          position: "absolute", top: 2, left: 3, right: 3, height: "45%",
-          background: "linear-gradient(to bottom, rgba(255,255,255,0.5), transparent)",
-          borderRadius: "8px 8px 50% 50%", pointerEvents: "none",
-        }} />
-        <motion.span
-          animate={{ rotateY: hov ? 360 : 0 }}
-          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-          style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "'Playfair Display',serif", position: "relative", zIndex: 1 }}
-        >U</motion.span>
-      </motion.div>
-
-      {/* Text */}
-      <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2 }}>
-        <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 18, lineHeight: 1.1 }}
-          className="nav-title">UzTravel</div>
-        <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase" }}
-          className="nav-sub">O'zbekiston Sayohati</div>
-      </motion.div>
-    </Link>
+    <motion.div ref={ref} onMouseMove={onMove} onMouseLeave={() => { xRaw.set(0); yRaw.set(0); }}
+      style={{ rotateX: rotX, rotateY: rotY, transformStyle: "preserve-3d", perspective: 900, ...style }}>
+      {children}
+    </motion.div>
   );
 }
 
-/* ── NAV LINK ───────────────────────────────── */
-const NAV_ITEMS = [
-  { href: "/",       label: "Bosh sahifa", icon: "🏠", desc: "Asosiy sahifa"     },
-  { href: "/explore",label: "Kashf etish", icon: "🧭", desc: "Joylarni ko'rish"  },
-  { href: "/map",    label: "3D Xarita",   icon: "🗺️", desc: "Interaktiv xarita" },
+function WaterBlob({ color = "#0EA5E9", size = 400, style = {} }) {
+  return (
+    <motion.div animate={{ scale: [1, 1.08, 0.96, 1.04, 1], rotate: [0, 4, -3, 5, 0] }}
+      transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      style={{ position: "absolute", width: size, height: size, pointerEvents: "none", ...style }}>
+      <svg viewBox="0 0 200 200" style={{ width: "100%", height: "100%", opacity: 0.1 }}>
+        <motion.path fill={color}
+          animate={{ d: [
+            "M44.3,-76.5C55.9,-67.5,62.7,-52.2,70.2,-37.2C77.7,-22.2,86,-7.5,84.5,6.5C83,20.5,71.7,33.8,61.1,45.8C50.5,57.8,40.6,68.5,28.1,74.5C15.6,80.5,0.5,81.8,-14.1,79.1C-28.7,76.4,-42.8,69.7,-55.2,60C-67.6,50.3,-78.3,37.6,-82.9,22.7C-87.5,7.8,-86,-9.3,-79.3,-23.6C-72.6,-37.9,-60.7,-49.4,-47.4,-58C-34.1,-66.6,-19.4,-72.3,-2.5,-68.7C14.4,-65.1,32.7,-52.2,44.3,-76.5Z",
+            "M47.5,-80.5C59.9,-71.2,67.1,-55.2,74.2,-39.5C81.3,-23.8,88.3,-8.4,86.5,6.2C84.7,20.8,74.1,34.6,62.5,46.3C50.9,58,38.3,67.6,23.9,73.9C9.5,80.2,-6.7,83.2,-21.4,79.5C-36.1,75.8,-49.3,65.4,-60.2,53C-71.1,40.6,-79.7,26.2,-82.6,10.5C-85.5,-5.2,-82.7,-22.2,-74.7,-36C-66.7,-49.8,-53.5,-60.4,-39.5,-68.9C-25.5,-77.4,-10.7,-83.8,3.8,-89.3C18.3,-94.8,35.1,-89.8,47.5,-80.5Z",
+            "M44.3,-76.5C55.9,-67.5,62.7,-52.2,70.2,-37.2C77.7,-22.2,86,-7.5,84.5,6.5C83,20.5,71.7,33.8,61.1,45.8C50.5,57.8,40.6,68.5,28.1,74.5C15.6,80.5,0.5,81.8,-14.1,79.1C-28.7,76.4,-42.8,69.7,-55.2,60C-67.6,50.3,-78.3,37.6,-82.9,22.7C-87.5,7.8,-86,-9.3,-79.3,-23.6C-72.6,-37.9,-60.7,-49.4,-47.4,-58C-34.1,-66.6,-19.4,-72.3,-2.5,-68.7C14.4,-65.1,32.7,-52.2,44.3,-76.5Z",
+          ]}}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </svg>
+    </motion.div>
+  );
+}
+
+function FeatureCard({ icon, title, desc, color, delay = 0 }) {
+  const { ripples, fire } = useRipple();
+  const [hov, setHov] = useState(false);
+  return (
+    <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.65, delay, ease: [0.23, 1, 0.32, 1] }}>
+      <Tilt3D depth={8} style={{ position: "relative" }}>
+        <motion.div onClick={fire} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+          whileHover={{ y: -8 }} transition={{ type: "spring", stiffness: 280, damping: 22 }}
+          style={{
+            position: "relative", overflow: "hidden", borderRadius: 28, padding: "40px 32px 36px",
+            textAlign: "center", cursor: "default",
+            background: hov ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.72)",
+            backdropFilter: "blur(24px) saturate(2)", WebkitBackdropFilter: "blur(24px) saturate(2)",
+            border: hov ? `1px solid ${color}40` : "1px solid rgba(255,255,255,0.7)",
+            boxShadow: hov ? `0 24px 56px rgba(0,0,0,0.12), 0 8px 24px ${color}20` : "0 4px 20px rgba(0,0,0,0.06)",
+            transition: "all 0.3s",
+          }}>
+          {ripples.map(rp => (
+            <motion.span key={rp.id} initial={{ scale: 0, opacity: 0.45 }} animate={{ scale: 8, opacity: 0 }}
+              transition={{ duration: 0.9 }} style={{
+                position: "absolute", left: rp.x, top: rp.y, width: 40, height: 40,
+                borderRadius: "50%", background: `${color}35`, transform: "translate(-50%,-50%)", pointerEvents: "none",
+              }} />
+          ))}
+          <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 3, repeat: Infinity, delay }} style={{
+              position: "absolute", top: 20, left: "50%", transform: "translateX(-50%)", width: 80, height: 80,
+              borderRadius: "50%", background: `radial-gradient(circle, ${color}45, transparent 70%)`, filter: "blur(16px)", pointerEvents: "none",
+            }} />
+          <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 2.5, repeat: Infinity, delay: delay + 0.5 }} style={{
+            position: "absolute", top: 0, left: 0, right: 0, height: "50%",
+            background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent)", pointerEvents: "none",
+          }} />
+          <div style={{ position: "relative", zIndex: 2, display: "flex", justifyContent: "center", marginBottom: 24 }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: 22, background: `linear-gradient(145deg, ${color}22, ${color}44)`,
+              border: `1.5px solid ${color}40`, display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 32, boxShadow: `0 4px 16px ${color}25`,
+            }}>
+              <motion.span animate={hov ? { rotate: [0,-12,14,-8,0], scale: [1,1.3,1.05,1.2,1] } : { rotate: [0,-3,3,-2,0], scale: [1,1.04,1] }}
+                transition={hov ? { duration: 0.5 } : { duration: 4, repeat: Infinity }}
+                style={{ display: "inline-block" }}>{icon}</motion.span>
+            </div>
+          </div>
+          <motion.div animate={{ scaleX: hov ? 1 : 0.3, opacity: hov ? 1 : 0.4 }}
+            style={{ position: "relative", zIndex: 2, width: 40, height: 3, borderRadius: 99, margin: "0 auto 16px",
+              background: `linear-gradient(90deg, ${color}, ${color}88)`, transformOrigin: "center" }}
+            transition={{ duration: 0.35 }} />
+          <h3 style={{ position: "relative", zIndex: 2, fontFamily: "'Playfair Display',serif", fontSize: 21, fontWeight: 700, color: "#0F172A", marginBottom: 12 }}>{title}</h3>
+          <p style={{ position: "relative", zIndex: 2, fontFamily: "'DM Sans',sans-serif", fontSize: 13.5, color: "#64748B", lineHeight: 1.75 }}>{desc}</p>
+        </motion.div>
+      </Tilt3D>
+    </motion.div>
+  );
+}
+
+const FEATURES = [
+  { icon: "📍", title: "Aniq Joylashuv", color: "#0EA5E9", desc: "Xaritada real koordinatalar va 3D manzara orqali har bir joy aniq ko'rsatiladi." },
+  { icon: "🌟", title: "Tasdiqlangan Joylar", color: "#F59E0B", desc: "Faqat tekshirilgan, baholangan va yuqori reytingli joylar tavsiya etiladi." },
+  { icon: "🧭", title: "Shaxsiy Tavsiya", color: "#6366F1", desc: "AI asosida kategoriya va mevsimga qarab eng mos sayohat marshrutlari taklif qilinadi." },
 ];
 
-function NavLink({ item, isActive, scrolled }) {
-  const { ripples, fire } = useRipple();
-  const [hov, setHov] = useState(false);
-  const [showDesc, setShowDesc] = useState(false);
-
+export default function HomePage() {
   return (
-    <div style={{ position: "relative" }}>
-      <Link
-        href={item.href}
-        onClick={fire}
-        onMouseEnter={() => { setHov(true); setTimeout(() => setShowDesc(true), 200); }}
-        onMouseLeave={() => { setHov(false); setShowDesc(false); }}
-        style={{ textDecoration: "none", position: "relative", display: "block" }}
-      >
-        <motion.div
-          whileHover={{ y: -1 }}
-          style={{
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "8px 14px", borderRadius: 12, position: "relative", overflow: "hidden",
-            background: isActive
-              ? scrolled ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.18)"
-              : hov
-              ? scrolled ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.12)"
-              : "transparent",
-            border: isActive
-              ? scrolled ? "1px solid rgba(99,102,241,0.25)" : "1px solid rgba(255,255,255,0.3)"
-              : "1px solid transparent",
-            backdropFilter: hov ? "blur(8px)" : "none",
-            transition: "background 0.25s, border 0.25s",
-          }}
-        >
-          {/* Ripples */}
-          {ripples.map(rp => (
-            <motion.span key={rp.id}
-              initial={{ scale: 0, opacity: 0.5 }}
-              animate={{ scale: 5, opacity: 0 }}
-              transition={{ duration: 0.65 }}
-              style={{
-                position: "absolute", left: rp.x, top: rp.y,
-                width: 30, height: 30, borderRadius: "50%",
-                background: scrolled ? "rgba(99,102,241,0.25)" : "rgba(255,255,255,0.35)",
-                transform: "translate(-50%,-50%)", pointerEvents: "none",
-              }}
-            />
-          ))}
+    <div style={{ background: "#fff", minHeight: "100vh", overflowX: "hidden" }}>
+      {/* Dashboard fullscreen (no Navbar over it) */}
+      <Dashboard />
 
-          {/* Animated icon */}
-          <motion.span
-            animate={hov
-              ? { rotate: [0, -12, 12, -6, 0], scale: [1, 1.3, 1.1, 1.2, 1] }
-              : { rotate: 0, scale: 1 }
-            }
-            transition={{ duration: 0.45, ease: "easeInOut" }}
-            style={{ fontSize: 15, display: "inline-block", filter: isActive ? "drop-shadow(0 0 4px rgba(99,102,241,0.6))" : "none" }}
-          >
-            {item.icon}
-          </motion.span>
-
-          <span style={{
-            fontFamily: "'DM Sans',sans-serif", fontSize: 12.5, fontWeight: isActive ? 600 : 400,
-            color: isActive
-              ? scrolled ? "#6366F1" : "#fff"
-              : scrolled ? "#334155" : "rgba(255,255,255,0.82)",
-            transition: "color 0.25s", position: "relative", zIndex: 1,
-          }}>{item.label}</span>
-
-          {/* Active dot */}
-          {isActive && (
-            <motion.div
-              layoutId="activeNavDot"
-              style={{
-                width: 5, height: 5, borderRadius: "50%",
-                background: scrolled ? "#6366F1" : "#fff",
-                boxShadow: scrolled ? "0 0 6px rgba(99,102,241,0.7)" : "0 0 6px rgba(255,255,255,0.9)",
-              }}
-            />
-          )}
-
-          {/* Bottom shimmer bar */}
-          <motion.div
-            animate={{ scaleX: hov || isActive ? 1 : 0 }}
-            style={{
-              position: "absolute", bottom: 0, left: 6, right: 6, height: 2,
-              background: scrolled
-                ? "linear-gradient(90deg,transparent,#6366F1,#0EA5E9,transparent)"
-                : "linear-gradient(90deg,transparent,rgba(255,255,255,0.8),transparent)",
-              borderRadius: 99, transformOrigin: "center",
-            }}
-            transition={{ duration: 0.3 }}
-          />
-        </motion.div>
-      </Link>
-
-      {/* Tooltip */}
-      <AnimatePresence>
-        {showDesc && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              position: "absolute", top: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)",
-              background: "rgba(15,23,42,0.92)",
-              backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
-              border: "0.5px solid rgba(255,255,255,0.15)",
-              borderRadius: 8, padding: "5px 12px",
-              fontFamily: "'DM Sans',sans-serif", fontSize: 10, color: "rgba(255,255,255,0.7)",
-              whiteSpace: "nowrap", pointerEvents: "none", zIndex: 200,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-            }}
-          >
-            {item.desc}
-            <div style={{
-              position: "absolute", top: -4, left: "50%", transform: "translateX(-50%)",
-              width: 8, height: 8, background: "rgba(15,23,42,0.92)",
-              border: "0.5px solid rgba(255,255,255,0.15)",
-              borderBottom: "none", borderRight: "none",
-              rotate: "45deg",
-            }} />
+      {/* Features section */}
+      <section style={{ padding: "96px 24px", background: "linear-gradient(160deg,#F8FAFF 0%,#EEF2FF 40%,#F0FDF4 100%)", position: "relative", overflow: "hidden" }}>
+        <WaterBlob color="#22C55E" size={380} style={{ top: -60, right: -80 }} />
+        <WaterBlob color="#0EA5E9" size={280} style={{ bottom: -40, left: -60 }} />
+        <div style={{ maxWidth: 1160, margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            transition={{ duration: 0.65 }} style={{ textAlign: "center", marginBottom: 64 }}>
+            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(2rem,5vw,3.2rem)", fontWeight: 700, color: "#0F172A", lineHeight: 1.15, marginBottom: 16 }}>
+              Nima uchun{" "}
+              <em style={{ fontStyle: "italic", background: "linear-gradient(90deg,#0EA5E9,#6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>UzTravel?</em>
+            </h2>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* ── USER AVATAR ────────────────────────────── */
-function UserMenu({ user, scrolled, onLogout }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const initials = user.phone
-    ? user.phone.slice(0, 2)
-    : (user.email || "U")[0].toUpperCase();
-
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <motion.button
-        onClick={() => setOpen(o => !o)}
-        whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-        style={{
-          display: "flex", alignItems: "center", gap: 9, padding: "6px 14px 6px 6px",
-          borderRadius: 999, cursor: "pointer", border: "none",
-          background: open
-            ? scrolled ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.2)"
-            : scrolled ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.12)",
-          backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-          boxShadow: open ? "0 4px 16px rgba(99,102,241,0.25)" : "none",
-          transition: "all 0.25s",
-        }}
-      >
-        {/* Avatar */}
-        <motion.div
-          animate={{ rotate: open ? 360 : 0 }}
-          transition={{ duration: 0.5 }}
-          style={{
-            width: 28, height: 28, borderRadius: "50%",
-            background: "linear-gradient(135deg,#0EA5E9,#6366F1)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 700, color: "#fff",
-            boxShadow: "0 2px 8px rgba(99,102,241,0.4)",
-            flexShrink: 0,
-          }}
-        >{initials}</motion.div>
-
-        <span style={{
-          fontFamily: "'DM Sans',sans-serif", fontSize: 12, fontWeight: 500,
-          color: scrolled ? "#334155" : "rgba(255,255,255,0.88)",
-          maxWidth: 90, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
-        }}>
-          {user.city || (user.phone ? `+998${user.phone}` : user.email?.split("@")[0])}
-        </span>
-
-        <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.25 }}
-          style={{ fontSize: 10, color: scrolled ? "#94A3B8" : "rgba(255,255,255,0.5)" }}
-        >▼</motion.span>
-      </motion.button>
-
-      {/* Dropdown */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 320, damping: 28 }}
-            style={{
-              position: "absolute", top: "calc(100% + 10px)", right: 0, minWidth: 200,
-              background: "rgba(255,255,255,0.92)",
-              backdropFilter: "blur(28px) saturate(1.8)", WebkitBackdropFilter: "blur(28px) saturate(1.8)",
-              border: "1px solid rgba(255,255,255,0.65)",
-              borderRadius: 16, overflow: "hidden",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08)",
-              zIndex: 200,
-            }}
-          >
-            {/* User info */}
-            <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: "50%",
-                  background: "linear-gradient(135deg,#0EA5E9,#6366F1)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14, fontWeight: 700, color: "#fff",
-                }}>{initials}</div>
-                <div>
-                  <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 600, color: "#0F172A" }}>
-                    {user.city || "Sayohatchi"}
-                  </div>
-                  <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 10, color: "#94A3B8" }}>
-                    {user.phone ? `+998${user.phone}` : user.email}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Menu items */}
-            {[
-              { icon: "🧭", label: "Kashf etish", href: "/explore" },
-              { icon: "🗺️", label: "3D Xarita", href: "/map" },
-            ].map(item => (
-              <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
-                style={{ textDecoration: "none" }}>
-                <motion.div
-                  whileHover={{ x: 4, background: "rgba(99,102,241,0.06)" }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
-                    fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: "#334155",
-                    cursor: "pointer", transition: "background 0.15s",
-                  }}
-                >
-                  <span style={{ fontSize: 16 }}>{item.icon}</span>
-                  {item.label}
-                </motion.div>
-              </Link>
-            ))}
-
-            <div style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-              <motion.button
-                whileHover={{ x: 4, background: "rgba(239,68,68,0.06)" }}
-                onClick={() => { setOpen(false); onLogout(); }}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
-                  fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: "#EF4444",
-                  cursor: "pointer", background: "none", border: "none", textAlign: "left",
-                  transition: "background 0.15s",
-                }}
-              >
-                <span>🚪</span> Chiqish
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* ── LIQUID AUTH BUTTON ─────────────────────── */
-function AuthButton() {
-  const { ripples, fire } = useRipple();
-  const [hov, setHov] = useState(false);
-
-  return (
-    <Link href="/auth" style={{ textDecoration: "none" }}>
-      <motion.div
-        onClick={fire}
-        onMouseEnter={() => setHov(true)}
-        onMouseLeave={() => setHov(false)}
-        whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-        style={{
-          position: "relative", overflow: "hidden",
-          padding: "9px 22px", borderRadius: 14, cursor: "pointer",
-          background: hov
-            ? "linear-gradient(135deg,#38BDF8,#6366F1,#A78BFA)"
-            : "linear-gradient(135deg,#0EA5E9,#6366F1)",
-          border: "0.5px solid rgba(255,255,255,0.35)",
-          boxShadow: hov
-            ? "0 10px 28px rgba(99,102,241,0.5), 0 4px 10px rgba(14,165,233,0.4), inset 0 1px 0 rgba(255,255,255,0.3)"
-            : "0 4px 14px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
-          transition: "background 0.35s, box-shadow 0.35s",
-        }}
-      >
-        {/* Ripples */}
-        {ripples.map(rp => (
-          <motion.span key={rp.id}
-            initial={{ scale: 0, opacity: 0.5 }}
-            animate={{ scale: 6, opacity: 0 }}
-            transition={{ duration: 0.7 }}
-            style={{
-              position: "absolute", left: rp.x, top: rp.y,
-              width: 24, height: 24, borderRadius: "50%",
-              background: "rgba(255,255,255,0.4)",
-              transform: "translate(-50%,-50%)", pointerEvents: "none",
-            }}
-          />
-        ))}
-        {/* Shine */}
-        <div style={{
-          position: "absolute", top: 0, left: 0, right: 0, height: "50%",
-          background: "linear-gradient(to bottom,rgba(255,255,255,0.22),transparent)",
-          borderRadius: "14px 14px 0 0", pointerEvents: "none",
-        }} />
-        <span style={{
-          position: "relative", zIndex: 1,
-          fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 600, color: "#fff",
-          display: "flex", alignItems: "center", gap: 7,
-        }}>
-          <motion.span
-            animate={hov ? { rotate: [0, -15, 15, 0] } : {}}
-            transition={{ duration: 0.4 }}
-          >✨</motion.span>
-          Kirish
-        </span>
-      </motion.div>
-    </Link>
-  );
-}
-
-/* ══════════════════════════════════════════════
-   MAIN NAVBAR
-══════════════════════════════════════════════ */
-export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [user, setUser]         = useState(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const pathname = usePathname();
-  const router   = useRouter();
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    try { const s = localStorage.getItem("uztravel_user"); if (s) setUser(JSON.parse(s)); } catch {}
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const logout = () => { localStorage.removeItem("uztravel_user"); setUser(null); router.push("/"); };
-
-  return (
-    <>
-      <style>{`
-        .nav-title { color: ${scrolled ? "#0F172A" : "#fff"}; transition: color 0.3s; }
-        .nav-sub   { color: ${scrolled ? "#94A3B8" : "rgba(255,255,255,0.55)"}; transition: color 0.3s; }
-      `}</style>
-
-      <motion.nav
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.1 }}
-        style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-          background: scrolled ? "rgba(255,255,255,0.82)" : "rgba(255,255,255,0.08)",
-          backdropFilter: "blur(28px) saturate(2)",
-          WebkitBackdropFilter: "blur(28px) saturate(2)",
-          borderBottom: scrolled ? "1px solid rgba(0,0,0,0.08)" : "1px solid rgba(255,255,255,0.18)",
-          boxShadow: scrolled ? "0 4px 28px rgba(0,0,0,0.08)" : "none",
-          transition: "background 0.4s, border 0.4s, box-shadow 0.4s",
-        }}
-      >
-        {/* Top shimmer line */}
-        <motion.div
-          animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          style={{
-            position: "absolute", top: 0, left: 0, right: 0, height: 1.5,
-            background: "linear-gradient(90deg,transparent,rgba(14,165,233,0.6),rgba(99,102,241,0.7),rgba(167,139,250,0.6),transparent)",
-            backgroundSize: "200% auto",
-            opacity: scrolled ? 0 : 0.8,
-            transition: "opacity 0.4s",
-          }}
-        />
-
-        <div style={{
-          maxWidth: 1320, margin: "0 auto", padding: "0 28px",
-          height: 66, display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <Logo3D />
-
-          {/* Desktop nav */}
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            {NAV_ITEMS.map(item => (
-              <NavLink
-                key={item.href}
-                item={item}
-                isActive={pathname === item.href}
-                scrolled={scrolled}
-              />
-            ))}
-          </div>
-
-          {/* Right side */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {user
-              ? <UserMenu user={user} scrolled={scrolled} onLogout={logout} />
-              : <AuthButton />
-            }
-
-            {/* Mobile burger */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setMobileOpen(o => !o)}
-              style={{
-                display: "none", // hidden on desktop
-                padding: 8, background: "none", border: "none", cursor: "pointer",
-              }}
-            >
-              <div style={{ width: 22, display: "flex", flexDirection: "column", gap: 5 }}>
-                {[0, 1, 2].map(i => (
-                  <motion.div key={i}
-                    animate={{ rotate: mobileOpen && i === 0 ? 45 : mobileOpen && i === 2 ? -45 : 0, y: mobileOpen && i === 0 ? 9 : mobileOpen && i === 2 ? -9 : 0, opacity: mobileOpen && i === 1 ? 0 : 1 }}
-                    style={{ height: 1.5, borderRadius: 99, background: scrolled ? "#334155" : "#fff" }}
-                  />
-                ))}
-              </div>
-            </motion.button>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 28 }}>
+            {FEATURES.map((f, i) => <FeatureCard key={f.title} {...f} delay={i * 0.12} />)}
           </div>
         </div>
-      </motion.nav>
-    </>
+      </section>
+
+      {/* CTA */}
+      <section style={{ padding: "80px 24px", background: "#fff" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto" }}>
+          <Tilt3D depth={4} style={{ borderRadius: 32 }}>
+            <div style={{ position: "relative", borderRadius: 32, overflow: "hidden", padding: "72px 48px", textAlign: "center",
+              backgroundImage: "url(https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1400&q=85)",
+              backgroundSize: "cover", backgroundPosition: "center" }}>
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg,rgba(14,165,233,0.92),rgba(99,102,241,0.88))" }} />
+              <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 2 }}
+                style={{ position: "absolute", top: 0, bottom: 0, width: "40%", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent)", transform: "skewX(-15deg)", pointerEvents: "none" }} />
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(1.8rem,4vw,2.8rem)", fontWeight: 700, color: "#fff", marginBottom: 16 }}>
+                  Sayohatingizni bugun boshlang
+                </h2>
+                <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 15, color: "rgba(255,255,255,0.78)", maxWidth: 440, margin: "0 auto 36px", lineHeight: 1.75 }}>
+                  Dashboard orqali barcha joylarni real vaqtda kuzating, parvozlarni ko'ring va sayohatingizni rejalashtiring
+                </p>
+                <Link href="/auth" style={{
+                  display: "inline-flex", alignItems: "center", gap: 10, padding: "15px 36px", borderRadius: 16,
+                  fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: 14, color: "#0EA5E9", background: "#fff",
+                  textDecoration: "none", boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                }}>🚀 Bepul Ro'yxatdan O'tish →</Link>
+              </div>
+            </div>
+          </Tilt3D>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
   );
 }

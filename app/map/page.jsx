@@ -131,19 +131,15 @@ function MapContent() {
   const catInfo = CATS.find(c => c.id === activeCat);
 
   /* ── INIT MAP ── */
-useEffect(() => {
+  useEffect(() => {
     if (inited.current) return;
     inited.current = true;
 
     import("maplibre-gl").then(({ default: maplibregl }) => {
       const container = mapRef.current;
       if (!container) return;
-
-      // Tozalash ishlari
-      if (mapInst.current) {
-        mapInst.current.remove();
-        mapInst.current = null;
-      }
+      if (container._maplibre_id) delete container._maplibre_id;
+      if (mapInst.current) { mapInst.current.remove(); mapInst.current = null; }
 
       const map = new maplibregl.Map({
         container,
@@ -155,60 +151,48 @@ useEffect(() => {
         antialias: true,
       });
 
+      /* Map load */
       map.on("load", () => {
-        /* --- BUG FIX: setFog o'rniga --- */
-        // MapLibre'da tuman (fog) property orqali tekshiriladi
-        if (map.setFog) { 
-            map.setFog({
-              "range": [0.5, 10],
-              "color": "#bad2eb",
-              "horizon-blend": 0.025
-            });
-        } else {
-            // Agar setFog ishlamasa, osmon (sky) qatlami orqali effekt beramiz
-            map.setPaintProperty('sky', 'sky-atmosphere-color', 'rgba(186, 210, 235, 1)');
-        }
+        /* 3D buildings — try/catch, chunki har tile style da mavjud emas */
+        try {
+          const style = map.getStyle();
+          const layers = style?.layers || [];
+          const sources = style?.sources || {};
+          const buildingLayer = layers.find(l => l.id === "building" || l["source-layer"] === "building");
+          const omtSource = sources["openmaptiles"] || sources["maptiler_planet"];
 
-        /* 3D Binolar (Extrusion) */
-        // OpenFreeMap'da layer nomi 'building' bo'lmasligi mumkin, 
-        // shuning uchun barcha binolarni qidiramiz
-        const layers = map.getStyle().layers;
-        const labelLayerId = layers.find(layer => layer.type === 'symbol' && layer.layout['text-field'])?.id;
-
-        map.addLayer({
-          id: "3d-buildings",
-          source: "openmaptiles",
-          "source-layer": "building",
-          type: "fill-extrusion",
-          minzoom: 12,
-          paint: {
-            "fill-extrusion-color": [
-              "interpolate", ["linear"], ["zoom"],
-              12, "#c9d4e0",
-              15, "#e8eef5",
-            ],
-            "fill-extrusion-height": [
-              "interpolate", ["linear"], ["zoom"],
-              12, 0,
-              12.05, ["coalesce", ["get", "render_height"], ["get", "height"], 8]
-            ],
-            "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], ["get", "min_height"], 0],
-            "fill-extrusion-opacity": 0.8,
-          },
-        }, labelLayerId); // Binolar yozuvlarning tagida ko'rinishi uchun
+          if (buildingLayer && omtSource) {
+            if (!map.getLayer("3d-buildings")) {
+              map.addLayer({
+                id: "3d-buildings",
+                source: Object.keys(omtSource ? sources : {}).find(k => k.includes("omt") || k.includes("planet")) || "openmaptiles",
+                "source-layer": "building",
+                type: "fill-extrusion",
+                minzoom: 12,
+                paint: {
+                  "fill-extrusion-color": [
+                    "interpolate", ["linear"], ["zoom"],
+                    12, "#c9d4e0", 15, "#e8eef5",
+                  ],
+                  "fill-extrusion-height": ["coalesce", ["get", "render_height"], ["get", "height"], 8],
+                  "fill-extrusion-base":   ["coalesce", ["get", "render_min_height"], 0],
+                  "fill-extrusion-opacity": 0.7,
+                },
+              }, buildingLayer.id);
+            }
+          }
+        } catch (_) { /* 3D buildings mavjud emas — skip */ }
 
         mapInst.current = map;
         setMapReady(true);
       });
 
+      /* Nav controls */
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
     });
 
     return () => {
-      if (mapInst.current) {
-        mapInst.current.remove();
-        mapInst.current = null;
-      }
+      if (mapInst.current) { mapInst.current.remove(); mapInst.current = null; }
       inited.current = false;
     };
   }, []);
